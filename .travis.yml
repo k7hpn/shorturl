@@ -1,0 +1,14 @@
+# Great Reading Adventure Travis CI Docker build file
+
+os: linux
+dist: xenial
+
+language: bash
+
+git:
+  depth: 1
+
+services:
+  - docker
+
+script: bash docker-build.bash

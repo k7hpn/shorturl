@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Authors>Maricopa County Library District Web developers</Authors>
+    <CodeAnalysisRuleSet>../ShortURL.ruleset</CodeAnalysisRuleSet>
+    <Company>Maricopa County Library District</Company>
+    <Copyright>Copyright 2019 Maricopa County Library District</Copyright>
+    <Description>ShortURL is a cross-platform Web-based application for creating URLs and tracking click counts.</Description>
+    <PackageLicenseUrl>https://github.com/mcld/shorturl/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mcld/shorturl/</PackageProjectUrl>
+    <PackageReleaseNotes>See https://github.com/mcld/shorturl/releases/latest</PackageReleaseNotes>
+    <Product>ShortURL</Product>
+    <RepositoryType>Git</RepositoryType>
+    <RepositoryUrl>https://github.com/mcld/shorturl/</RepositoryUrl>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>1.0.0-beta1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
+  </ItemGroup>
+
+</Project>
