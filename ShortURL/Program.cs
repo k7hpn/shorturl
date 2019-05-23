@@ -12,6 +12,7 @@ namespace ShortURL
         public const string ConfigurationInstance = "ShortURL.Instance";
         public const string ConfigurationLogRolling = "ShortURL.LogRolling";
         public const string ConfigurationRedis = "ShortURL.RedisConfiguration";
+        public const string ConfigurationRedisNamespace = "ShortURL.RedisNamespace";
         public const string ConfigurationReverseProxy = "ShortURL.ReverseProxy";
 
         public const string ConnectionString = "ShortURL";
