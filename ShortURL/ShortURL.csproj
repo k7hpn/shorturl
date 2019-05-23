@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/mcld/shorturl/</RepositoryUrl>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <UserSecretsId>51b5f8d5-f082-48c5-831e-74000f5726f7</UserSecretsId>
-    <Version>1.0.0-beta1</Version>
+    <Version>1.0.0-beta2</Version>
   </PropertyGroup>
 
   <ItemGroup>

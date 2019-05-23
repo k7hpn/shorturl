@@ -34,10 +34,13 @@ namespace ShortURL
 
             if (!string.IsNullOrEmpty(_config[Program.ConfigurationRedis]))
             {
+                string redisNamespace = _config[Program.ConfigurationRedisNamespace]
+                    ?? instance;
+
                 services.AddDistributedRedisCache(_ =>
                 {
                     _.Configuration = _config[Program.ConfigurationRedis];
-                    _.InstanceName = instance + ".";
+                    _.InstanceName = redisNamespace + ".";
                 });
             }
             else
