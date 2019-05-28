@@ -16,7 +16,7 @@ namespace ShortURL
         private readonly IConfiguration _config;
         private readonly ILogger _logger;
 
-        private bool IsRelational = false;
+        private bool IsRelational;
 
         public Startup(IConfiguration config,
             ILogger<Startup> logger)
@@ -29,6 +29,8 @@ namespace ShortURL
         {
             services.AddResponseCompression(_ => _.Providers
                 .Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>());
+
+            services.AddHttpContextAccessor();
 
             string instance = _config[Program.ConfigurationInstance] ?? Program.DefaultInstance;
 
