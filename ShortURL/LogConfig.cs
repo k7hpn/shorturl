@@ -22,7 +22,9 @@ namespace ShortURL
                 .Enrich.WithProperty(ApplicationEnrichment,
                     Assembly.GetExecutingAssembly().GetName().Name)
                 .Enrich.WithProperty(VersionEnrichment,
-                    Assembly.GetExecutingAssembly().GetName().Version)
+                    Assembly.GetEntryAssembly()
+                        .GetCustomAttribute<AssemblyFileVersionAttribute>()?
+                        .Version)
                 .Enrich.WithProperty(InstanceEnrichment, instance)
                 .Enrich.FromLogContext()
                 .ReadFrom.Configuration(config)

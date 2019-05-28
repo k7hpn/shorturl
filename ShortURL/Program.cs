@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore;
+﻿using System.Reflection;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,18 +40,26 @@ namespace ShortURL
 
             try
             {
-                Log.Information("Starting Web host for instance {Instance}", instance);
+                Log.Information("Starting {Name} v{Version} for instance {Instance}",
+                    Assembly.GetExecutingAssembly().GetName().Name,
+                    Assembly.GetEntryAssembly()
+                        .GetCustomAttribute<AssemblyFileVersionAttribute>()?
+                        .Version,
+                    instance);
                 CreateWebHostBuilder(args).Build().Run();
             }
             catch (System.Exception ex)
             {
-                Log.Logger.Fatal(ex, "A fatal error occurred on instance {Instance}: {Message}",
+                Log.Logger.Fatal(ex, "A fatal error occurred on {Name} instance {Instance}: {Message}",
+                    Assembly.GetExecutingAssembly().GetName().Name,
                     instance,
                     ex.Message);
             }
             finally
             {
-                Log.Information("Stopping Web host for instance {Instance}", instance);
+                Log.Information("Stopping {Name} for instance {Instance}",
+                    Assembly.GetExecutingAssembly().GetName().Name,
+                    instance);
                 Log.CloseAndFlush();
             }
         }
