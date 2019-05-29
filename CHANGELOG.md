@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.0-beta4] - 2019-05-29
+### Fixed
+ - Remove faulty IP address request muting
+
 ## [1.0.0-beta3] - 2019-05-28
 ### Changed
  - Improve granularity in application version logging

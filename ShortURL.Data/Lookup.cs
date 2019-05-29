@@ -5,16 +5,19 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 
 namespace ShortURL.Data
 {
     public class Lookup
     {
+        private readonly ILogger _logger;
         private readonly IDistributedCache _cache;
         private readonly Context _context;
 
-        public Lookup(IDistributedCache cache, Context context)
+        public Lookup(ILogger<Lookup> logger, IDistributedCache cache, Context context)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
@@ -24,17 +27,28 @@ namespace ShortURL.Data
             var cacheValue = await _cache.GetAsync(key);
             if (cacheValue == null)
             {
+                _logger.LogInformation("Cache miss for {Key}", key);
                 return null;
             }
 
             using (var memoryStream = new MemoryStream(cacheValue))
             {
-                return new BinaryFormatter().Deserialize(memoryStream) as Model.IdAndLink;
+                var idAndLink = new BinaryFormatter().Deserialize(memoryStream) as Model.IdAndLink;
+                if(idAndLink == null)
+                {
+                    _logger.LogWarning("Cache hit for {Key} but couldn't be converted to id and link", key);
+                }
+                return idAndLink;
             }
         }
 
         private async Task SetCacheAsync(string key, Model.IdAndLink idAndLink)
         {
+            _logger.LogInformation("Setting cache for {CacheKey}: {Id}, {Link}",
+                key,
+                idAndLink.Id,
+                idAndLink.Link);
+
             using (var memoryStream = new MemoryStream())
             {
                 new BinaryFormatter().Serialize(memoryStream, idAndLink);

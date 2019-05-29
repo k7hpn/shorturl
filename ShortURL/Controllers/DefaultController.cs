@@ -24,21 +24,18 @@ namespace ShortURL.Controllers
         private readonly ILogger _logger;
         private readonly IDistributedCache _cache;
         private readonly IConfiguration _config;
-        private readonly IHttpContextAccessor _httpContext;
         private readonly Data.Lookup _lookup;
         private readonly Data.Update _update;
 
         public DefaultController(ILogger<DefaultController> logger,
             IDistributedCache cache,
             IConfiguration config,
-            IHttpContextAccessor httpContext,
             Data.Lookup lookup,
             Data.Update update)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _httpContext = httpContext ?? throw new ArgumentNullException(nameof(httpContext));
             _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
             _update = update ?? throw new ArgumentNullException(nameof(update));
         }
@@ -49,17 +46,12 @@ namespace ShortURL.Controllers
         {
             var fixedStub = string.IsNullOrEmpty(stub) ? null : stub.Trim();
 
-            var isIpAddress = Request?.Host.Host
-                == _httpContext.HttpContext.Connection.RemoteIpAddress.ToString();
-
             return Redirect(await GetRedirectAsync(Request?.Host.Host,
-                fixedStub,
-                isIpAddress));
+                fixedStub));
         }
 
         private async Task<string> GetRedirectAsync(string domainName,
-            string stub,
-            bool isIpAddress = false)
+            string stub)
         {
             string domainNameText = domainName?.Trim();
             string stubText = stub?.Trim();
@@ -94,7 +86,7 @@ namespace ShortURL.Controllers
                 if (groupIdLink == null)
                 {
                     groupIdLink = await _lookup.GetSystemDefault();
-                    if (groupIdLink != null && !isIpAddress)
+                    if (groupIdLink != null)
                     {
                         _logger.LogWarning("Group not found for domain {DomainNameText}, using default group: {GroupLink}",
                             domainNameText, groupIdLink?.Link);
