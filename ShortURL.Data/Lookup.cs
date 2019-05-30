@@ -38,10 +38,6 @@ namespace ShortURL.Data
                 {
                     _logger.LogWarning("Cache hit for {Key} but couldn't be converted to id and link", key);
                 }
-                else
-                {
-                    _logger.LogInformation("Cache hit for {Key}", key);
-                }
                 return idAndLink;
             }
         }
