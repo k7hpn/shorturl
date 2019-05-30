@@ -70,12 +70,14 @@ namespace ShortURL.Controllers
                 // no match for group + stub or stub provided with no domain
                 if (recordIdLink == null)
                 {
+                    // check for stub independent of domain/group
                     recordIdLink = await _lookup.GetStubNoGroupAsync(stubText);
                 }
             }
-            else if (!string.IsNullOrEmpty(domainNameText))
+
+            if (recordIdLink == null && !string.IsNullOrEmpty(domainNameText))
             {
-                // domain provided, no stub; check group default
+                // domain provided, no stub or stub not found; check group default
                 groupIdLink = await _lookup.GetGroupDefaultAsync(domainNameText);
             }
 

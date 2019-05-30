@@ -7,7 +7,7 @@
     <Company>Maricopa County Library District</Company>
     <Copyright>Copyright 2019 Maricopa County Library District</Copyright>
     <Description>ShortURL is a cross-platform Web-based application for creating URLs and tracking click counts.</Description>
-    <FileVersion>1.0.0-beta5</FileVersion>
+    <FileVersion>1.0.0-beta6</FileVersion>
     <PackageLicenseUrl>https://github.com/mcld/shorturl/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/mcld/shorturl/</PackageProjectUrl>
     <PackageReleaseNotes>See https://github.com/mcld/shorturl/releases/latest</PackageReleaseNotes>
