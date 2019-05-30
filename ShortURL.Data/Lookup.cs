@@ -34,9 +34,13 @@ namespace ShortURL.Data
             using (var memoryStream = new MemoryStream(cacheValue))
             {
                 var idAndLink = new BinaryFormatter().Deserialize(memoryStream) as Model.IdAndLink;
-                if(idAndLink == null)
+                if (idAndLink == null)
                 {
                     _logger.LogWarning("Cache hit for {Key} but couldn't be converted to id and link", key);
+                }
+                else
+                {
+                    _logger.LogInformation("Cache hit for {Key}", key);
                 }
                 return idAndLink;
             }
@@ -75,6 +79,13 @@ namespace ShortURL.Data
                 .Select(_ => _.GroupId)
                 .SingleOrDefaultAsync();
 
+            if (groupId == default)
+            {
+                _logger.LogInformation("No group with name equal to {domainName}",
+                    domainName,
+                    stubText);
+            }
+
             var idAndLink = await _context.Records
                 .AsNoTracking()
                 .Where(_ => _.IsActive
@@ -86,6 +97,12 @@ namespace ShortURL.Data
             if (idAndLink != null)
             {
                 await SetCacheAsync(cacheKey, idAndLink);
+            }
+            else
+            {
+                _logger.LogInformation("No match for domain {domainName} stub {stubText}",
+                    domainName,
+                    stubText);
             }
 
             return idAndLink;
@@ -113,6 +130,11 @@ namespace ShortURL.Data
             {
                 await SetCacheAsync(cacheKey, idAndLink);
             }
+            else
+            {
+                _logger.LogInformation("No match for stub {stubText}",
+                    stubText);
+            }
 
             return idAndLink;
         }
@@ -133,6 +155,12 @@ namespace ShortURL.Data
                 .Select(_ => _.GroupId)
                 .SingleOrDefaultAsync();
 
+            if (groupId == default)
+            {
+                _logger.LogInformation("No group with name equal to {domainName}",
+                    domainName);
+            }
+
             var idAndLink = await _context.Groups
                 .AsNoTracking()
                 .Where(_ => _.GroupId == groupId)
@@ -142,6 +170,11 @@ namespace ShortURL.Data
             if (idAndLink != null)
             {
                 await SetCacheAsync(cacheKey, idAndLink);
+            }
+            else
+            {
+                _logger.LogInformation("No match for domain {domainName}",
+                    domainName);
             }
 
             return idAndLink;
@@ -166,6 +199,10 @@ namespace ShortURL.Data
             if (idAndLink != null)
             {
                 await SetCacheAsync(cacheKey, idAndLink);
+            }
+            else
+            {
+                _logger.LogWarning("No match for system default");
             }
 
             return idAndLink;
