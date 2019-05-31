@@ -27,7 +27,7 @@ namespace ShortURL.Data
             var cacheValue = await _cache.GetAsync(key);
             if (cacheValue == null)
             {
-                _logger.LogInformation("Cache miss for {Key}", key);
+                _logger.LogTrace("Cache miss for {Key}", key);
                 return null;
             }
 
@@ -44,7 +44,7 @@ namespace ShortURL.Data
 
         private async Task SetCacheAsync(string key, Model.IdAndLink idAndLink)
         {
-            _logger.LogInformation("Setting cache for {CacheKey}: {Id}, {Link}",
+            _logger.LogTrace("Setting cache for {CacheKey}: {Id}, {Link}",
                 key,
                 idAndLink.Id,
                 idAndLink.Link);
@@ -54,7 +54,7 @@ namespace ShortURL.Data
                 new BinaryFormatter().Serialize(memoryStream, idAndLink);
                 await _cache.SetAsync(key, memoryStream.ToArray(), new DistributedCacheEntryOptions
                 {
-                    SlidingExpiration = TimeSpan.FromMinutes(120)
+                    SlidingExpiration = TimeSpan.FromMinutes(360)
                 });
             }
         }
@@ -94,12 +94,6 @@ namespace ShortURL.Data
             {
                 await SetCacheAsync(cacheKey, idAndLink);
             }
-            else
-            {
-                _logger.LogInformation("No match for domain {domainName} stub {stubText}",
-                    domainName,
-                    stubText);
-            }
 
             return idAndLink;
         }
@@ -125,11 +119,6 @@ namespace ShortURL.Data
             if (idAndLink != null)
             {
                 await SetCacheAsync(cacheKey, idAndLink);
-            }
-            else
-            {
-                _logger.LogInformation("No match for stub {stubText}",
-                    stubText);
             }
 
             return idAndLink;
@@ -167,11 +156,6 @@ namespace ShortURL.Data
             {
                 await SetCacheAsync(cacheKey, idAndLink);
             }
-            else
-            {
-                _logger.LogInformation("No match for domain {domainName}",
-                    domainName);
-            }
 
             return idAndLink;
         }
@@ -195,10 +179,6 @@ namespace ShortURL.Data
             if (idAndLink != null)
             {
                 await SetCacheAsync(cacheKey, idAndLink);
-            }
-            else
-            {
-                _logger.LogWarning("No match for system default");
             }
 
             return idAndLink;

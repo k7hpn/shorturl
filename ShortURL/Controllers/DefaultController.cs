@@ -18,6 +18,7 @@ namespace ShortURL.Controllers
             "favicon.ico",
             "index.htm",
             "robots.txt",
+            "sitemap.xml",
             "webdav"
         };
 
@@ -90,7 +91,7 @@ namespace ShortURL.Controllers
                     groupIdLink = await _lookup.GetSystemDefault();
                     if (groupIdLink != null)
                     {
-                        _logger.LogWarning("Group not found for domain {DomainNameText}, using default group: {GroupLink}",
+                        _logger.LogInformation("Group not found for domain {DomainNameText}, using default group: {GroupLink}",
                             domainNameText, groupIdLink?.Link);
                     }
                 }
@@ -98,7 +99,7 @@ namespace ShortURL.Controllers
                 if (groupIdLink == null)
                 {
                     destination = _config[Program.ConfigurationDefaultLink];
-                    _logger.LogWarning("No default URL configured in the database, defaulting to {Destination} from configuration",
+                    _logger.LogInformation("No default URL configured in the database, defaulting to {Destination} from configuration",
                         destination);
                 }
                 else
@@ -107,9 +108,10 @@ namespace ShortURL.Controllers
                         && !MuteStubs.Contains(stubText)
                         && !stubText.EndsWith(MuteExtension))
                     {
-                        _logger.LogWarning("Stub not found for domain {DomainNameText}: {StubText}",
+                        _logger.LogWarning("Unable to fulfill domain {DomainNameText}, stub {StubText}, sending to {Link}",
                             domainNameText,
-                            stubText);
+                            stubText,
+                            groupIdLink.Link);
                     }
                     destination = groupIdLink.Link;
                     await _update.UpdateGroupVisitAsync((int)groupIdLink.Id);
