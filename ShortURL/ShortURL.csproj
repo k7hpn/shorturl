@@ -1,31 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <Authors>Maricopa County Library District Web developers</Authors>
     <CodeAnalysisRuleSet>../ShortURL.ruleset</CodeAnalysisRuleSet>
     <Company>Maricopa County Library District</Company>
     <Copyright>Copyright 2019 Maricopa County Library District</Copyright>
     <Description>ShortURL is a cross-platform Web-based application for creating URLs and tracking click counts.</Description>
-    <FileVersion>1.0.0-beta7</FileVersion>
+    <FileVersion>1.0.0-beta8</FileVersion>
     <PackageLicenseUrl>https://github.com/mcld/shorturl/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/mcld/shorturl/</PackageProjectUrl>
     <PackageReleaseNotes>See https://github.com/mcld/shorturl/releases/latest</PackageReleaseNotes>
     <Product>ShortURL</Product>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/mcld/shorturl/</RepositoryUrl>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <UserSecretsId>51b5f8d5-f082-48c5-831e-74000f5726f7</UserSecretsId>
     <Version>1.0.0-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Redis" Version="2.2.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.3" />
-    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="3.1.32" />
+    <PackageReference Include="Serilog.AspNetCore" Version="3.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="5.1.2" />

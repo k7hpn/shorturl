@@ -2,10 +2,10 @@
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog.Context;
 
@@ -39,7 +39,7 @@ namespace ShortURL
                 string redisNamespace = _config[Program.ConfigurationRedisNamespace]
                     ?? instance;
 
-                services.AddDistributedRedisCache(_ =>
+                services.AddStackExchangeRedisCache(_ =>
                 {
                     _.Configuration = _config[Program.ConfigurationRedis];
                     _.InstanceName = redisNamespace + ".";
@@ -58,18 +58,16 @@ namespace ShortURL
             }
             else
             {
-                services.AddDbContextPool<Data.Context>(_ => _.UseInMemoryDatabase(instance));
-                IsRelational = false;
+                throw new Exception("No connection string provided.");
             }
 
             services.AddScoped<Data.Lookup>();
             services.AddScoped<Data.Update>();
 
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllers();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -102,7 +100,8 @@ namespace ShortURL
 
             ConfigureDatabase(app);
 
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(_ => _.MapControllers());
         }
 
         private void ConfigureDatabase(IApplicationBuilder app)
