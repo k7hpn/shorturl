@@ -132,7 +132,7 @@ namespace ShortURL.Controllers
             string domainNameText = Request?.Host.Host?.Trim();
             string stubText = stub?.Trim();
 
-            string key = _lookup.GetCacheKey(domainNameText, stubText);
+            string key = Data.Lookup.GetCacheKey(domainNameText, stubText);
 
             if (key != "default")
             {

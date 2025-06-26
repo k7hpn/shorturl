@@ -14,62 +14,20 @@ namespace ShortURL
     public class Startup
     {
         private readonly IConfiguration _config;
-        private readonly ILogger _logger;
 
-        private bool IsRelational;
+        private bool _isRelational;
+        private bool _isDevelopment;
 
-        public Startup(IConfiguration config,
-            ILogger<Startup> logger)
+        public Startup(IConfiguration config, IWebHostEnvironment env)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _isDevelopment = env.IsDevelopment();
         }
 
-        public void ConfigureServices(IServiceCollection services)
+        public void Configure(IApplicationBuilder app)
         {
-            services.AddResponseCompression(_ => _.Providers
-                .Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>());
-
-            services.AddHttpContextAccessor();
-
-            string instance = _config[Program.ConfigurationInstance] ?? Program.DefaultInstance;
-
-            if (!string.IsNullOrEmpty(_config[Program.ConfigurationRedis]))
-            {
-                string redisNamespace = _config[Program.ConfigurationRedisNamespace]
-                    ?? instance;
-
-                services.AddStackExchangeRedisCache(_ =>
-                {
-                    _.Configuration = _config[Program.ConfigurationRedis];
-                    _.InstanceName = redisNamespace + ".";
-                });
-            }
-            else
-            {
-                services.AddDistributedMemoryCache();
-            }
-
-            var cs = _config.GetConnectionString(Program.ConnectionString);
-            if (!string.IsNullOrEmpty(cs))
-            {
-                services.AddDbContextPool<Data.Context>(_ => _.UseSqlServer(cs));
-                IsRelational = true;
-            }
-            else
-            {
-                throw new Exception("No connection string provided.");
-            }
-
-            services.AddScoped<Data.Lookup>();
-            services.AddScoped<Data.Update>();
-
-            services.AddControllers();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
+            if (_isDevelopment)
             {
                 app.UseDeveloperExceptionPage();
             }
@@ -104,9 +62,50 @@ namespace ShortURL
             app.UseEndpoints(_ => _.MapControllers());
         }
 
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddResponseCompression(_ => _.Providers
+                .Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>());
+
+            services.AddHttpContextAccessor();
+
+            string instance = _config[Program.ConfigurationInstance] ?? Program.DefaultInstance;
+
+            if (!string.IsNullOrEmpty(_config[Program.ConfigurationRedis]))
+            {
+                string redisNamespace = _config[Program.ConfigurationRedisNamespace] ?? instance;
+
+                services.AddStackExchangeRedisCache(_ =>
+                {
+                    _.Configuration = _config[Program.ConfigurationRedis];
+                    _.InstanceName = redisNamespace + ".";
+                });
+            }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
+
+            var cs = _config.GetConnectionString(Program.ConnectionString);
+            if (!string.IsNullOrEmpty(cs))
+            {
+                services.AddDbContextPool<Data.Context>(_ => _.UseSqlServer(cs));
+                _isRelational = true;
+            }
+            else
+            {
+                throw new Exception("No connection string provided.");
+            }
+
+            services.AddScoped<Data.Lookup>();
+            services.AddScoped<Data.Update>();
+
+            services.AddControllers();
+        }
+
         private void ConfigureDatabase(IApplicationBuilder app)
         {
-            if (IsRelational)
+            if (_isRelational)
             {
                 using (var scope = app
                     .ApplicationServices
@@ -119,8 +118,8 @@ namespace ShortURL
 
                         if (pending?.Count() > 0)
                         {
-                            _logger.LogInformation("There are {Count} pending database migrations",
-                                pending.Count());
+                            //_logger.LogInformation("There are {Count} pending database migrations",
+                            //    pending.Count());
 
                             try
                             {
@@ -128,9 +127,9 @@ namespace ShortURL
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogCritical(ex,
-                                    "Could not perform database migration: {Message}",
-                                    ex.Message);
+                                //_logger.LogCritical(ex,
+                                //    "Could not perform database migration: {Message}",
+                                //    ex.Message);
                                 throw;
                             }
                         }
@@ -139,7 +138,7 @@ namespace ShortURL
             }
             else
             {
-                _logger.LogInformation("Not performing migrations, data store is non-relational.");
+                //_logger.LogInformation("Not performing migrations, data store is non-relational.");
             }
         }
     }

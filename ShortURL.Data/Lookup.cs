@@ -1,7 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -11,9 +10,9 @@ namespace ShortURL.Data
 {
     public class Lookup
     {
-        private readonly ILogger _logger;
         private readonly IDistributedCache _cache;
         private readonly Context _context;
+        private readonly ILogger _logger;
 
         public Lookup(ILogger<Lookup> logger, IDistributedCache cache, Context context)
         {
@@ -22,41 +21,60 @@ namespace ShortURL.Data
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        private async Task<Model.IdAndLink> GetCacheAsync(string key)
+        public static string GetCacheKey(string domain = null, string stub = null)
         {
-            var cacheValue = await _cache.GetAsync(key);
-            if (cacheValue == null)
+            if (!string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(stub))
             {
-                _logger.LogTrace("Cache miss for {Key}", key);
-                return null;
+                return $"d.{domain}.s.{stub}";
             }
-
-            using (var memoryStream = new MemoryStream(cacheValue))
+            else if (!string.IsNullOrEmpty(domain))
             {
-                var idAndLink = new BinaryFormatter().Deserialize(memoryStream) as Model.IdAndLink;
-                if (idAndLink == null)
-                {
-                    _logger.LogWarning("Cache hit for {Key} but couldn't be converted to id and link", key);
-                }
-                return idAndLink;
+                return $"d.{domain}";
+            }
+            else if (!string.IsNullOrEmpty(stub))
+            {
+                return $"s.{stub}";
+            }
+            else
+            {
+                return "default";
             }
         }
 
-        private async Task SetCacheAsync(string key, Model.IdAndLink idAndLink)
+        public async Task<Model.IdAndLink> GetGroupDefaultAsync(string domainName)
         {
-            _logger.LogTrace("Setting cache for {CacheKey}: {Id}, {Link}",
-                key,
-                idAndLink.Id,
-                idAndLink.Link);
+            string cacheKey = GetCacheKey(domain: domainName);
 
-            using (var memoryStream = new MemoryStream())
+            var cachedValue = await GetCacheAsync(cacheKey);
+            if (cachedValue != null)
             {
-                new BinaryFormatter().Serialize(memoryStream, idAndLink);
-                await _cache.SetAsync(key, memoryStream.ToArray(), new DistributedCacheEntryOptions
-                {
-                    SlidingExpiration = TimeSpan.FromMinutes(360)
-                });
+                return cachedValue;
             }
+
+            var groupId = await _context.Domains
+                .AsNoTracking()
+                .Where(_ => _.Name == domainName)
+                .Select(_ => _.GroupId)
+                .SingleOrDefaultAsync();
+
+            if (groupId == default)
+            {
+                _logger.LogInformation("No group with name equal to {domainName}",
+                    domainName);
+            }
+
+            var idAndLink = await _context.Groups
+                .AsNoTracking()
+                .Where(_ => _.GroupId == groupId)
+                .Select(_ => new Model.IdAndLink { Id = groupId, Link = _.DefaultLink })
+                .SingleOrDefaultAsync();
+
+            if (idAndLink != null)
+            {
+                await SetCacheAsync(cacheKey, idAndLink);
+            }
+
+            return idAndLink;
         }
 
         public async Task<Model.IdAndLink> GetGroupStubAsync(string domainName, string stubText)
@@ -77,7 +95,7 @@ namespace ShortURL.Data
 
             if (groupId == default)
             {
-                _logger.LogInformation("No group with name equal to {domainName}",
+                _logger.LogInformation("No group with name equal to {DomainName}: {StubText}",
                     domainName,
                     stubText);
             }
@@ -124,42 +142,6 @@ namespace ShortURL.Data
             return idAndLink;
         }
 
-        public async Task<Model.IdAndLink> GetGroupDefaultAsync(string domainName)
-        {
-            string cacheKey = GetCacheKey(domain: domainName);
-
-            var cachedValue = await GetCacheAsync(cacheKey);
-            if (cachedValue != null)
-            {
-                return cachedValue;
-            }
-
-            var groupId = await _context.Domains
-                .AsNoTracking()
-                .Where(_ => _.Name == domainName)
-                .Select(_ => _.GroupId)
-                .SingleOrDefaultAsync();
-
-            if (groupId == default)
-            {
-                _logger.LogInformation("No group with name equal to {domainName}",
-                    domainName);
-            }
-
-            var idAndLink = await _context.Groups
-                .AsNoTracking()
-                .Where(_ => _.GroupId == groupId)
-                .Select(_ => new Model.IdAndLink { Id = groupId, Link = _.DefaultLink })
-                .SingleOrDefaultAsync();
-
-            if (idAndLink != null)
-            {
-                await SetCacheAsync(cacheKey, idAndLink);
-            }
-
-            return idAndLink;
-        }
-
         public async Task<Model.IdAndLink> GetSystemDefault()
         {
             string cacheKey = GetCacheKey();
@@ -184,24 +166,53 @@ namespace ShortURL.Data
             return idAndLink;
         }
 
-        public string GetCacheKey(string domain = null, string stub = null)
+        private async Task<Model.IdAndLink> GetCacheAsync(string key)
         {
-            if (!string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(stub))
+            var cacheValue = await _cache.GetStringAsync(key);
+            if (cacheValue == null)
             {
-                return $"d.{domain}.s.{stub}";
+                _logger.LogTrace("Cache miss for {Key}", key);
+                return null;
             }
-            else if (!string.IsNullOrEmpty(domain))
+
+            Model.IdAndLink idAndLink = null;
+
+            try
             {
-                return $"d.{domain}";
+                idAndLink = JsonSerializer.Deserialize<Model.IdAndLink>(cacheValue);
             }
-            else if (!string.IsNullOrEmpty(stub))
+            catch (JsonException jex)
             {
-                return $"s.{stub}";
+                _logger.LogError(jex,
+                    "Problem deserializing cached link, removing {Key} from cache: {ErrorMessage}",
+                    key,
+                    jex.Message);
+                await _cache.RemoveAsync(key);
             }
-            else
+
+            if (idAndLink == null)
             {
-                return "default";
+                _logger.LogWarning("Cache hit but removing {Key}, could not deserialize: {Serialized}",
+                    key,
+                    cacheValue);
+                await _cache.RemoveAsync(key);
             }
+
+            return idAndLink;
+        }
+
+        private async Task SetCacheAsync(string key, Model.IdAndLink idAndLink)
+        {
+            _logger.LogTrace("Setting cache for {CacheKey}: {Id}, {Link}",
+                key,
+                idAndLink.Id,
+                idAndLink.Link);
+
+            await _cache.SetStringAsync(key,
+                JsonSerializer.Serialize(idAndLink), new DistributedCacheEntryOptions
+                {
+                    SlidingExpiration = TimeSpan.FromMinutes(360)
+                });
         }
     }
 }

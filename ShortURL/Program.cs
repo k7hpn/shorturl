@@ -1,14 +1,19 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 
 namespace ShortURL
 {
     public static class Program
     {
+        private const string EnvAspNetCoreEnv = "ASPNETCORE_ENVIRONMENT";
+        private const string EnvRunningInContainer = "DOTNET_RUNNING_IN_CONTAINER";
+
         public const string ConfigurationDefaultLink = "ShortURL.DefaultLink";
         public const string ConfigurationInstance = "ShortURL.Instance";
         public const string ConfigurationLogRolling = "ShortURL.LogRolling";
@@ -21,52 +26,71 @@ namespace ShortURL
 
         public const string DefaultInstance = "ShortURL";
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            string instance = DefaultInstance;
+            using var webhost = Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(_ => _.UseStartup<Startup>())
+                .UseSerilog()
+                .Build();
+            
+            using var scope = webhost.Services.CreateScope();
+            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var instance = config[ConfigurationInstance] ?? DefaultInstance;
 
-            using (var configWebhost = CreateWebHostBuilder(args).Build())
-            using (var scope = configWebhost.Services.CreateScope())
+            var loggingLevelSwitch = new Serilog.Core.LoggingLevelSwitch();
+
+            Log.Logger = new LogConfig().Build(config, loggingLevelSwitch).CreateLogger();
+            Log.Information("Starting {Name} v{Version} instance {Instance} environment {Environment}",
+                Assembly.GetExecutingAssembly().GetName().Name,
+                Assembly.GetEntryAssembly()
+                    .GetCustomAttribute<AssemblyFileVersionAttribute>()?
+                    .Version,
+                instance,
+                config[EnvAspNetCoreEnv] ?? "Production");
+
+            Log.Information("Starting {Name} v{Version} for instance {Instance}",
+                Assembly.GetExecutingAssembly().GetName().Name,
+                Assembly.GetEntryAssembly()
+                    .GetCustomAttribute<AssemblyFileVersionAttribute>()?
+                    .Version,
+                instance);
+
+            if (!string.IsNullOrEmpty(config[EnvRunningInContainer]))
             {
-                var startupConfig = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-
-                if (!string.IsNullOrEmpty(startupConfig[ConfigurationInstance]))
-                {
-                    instance = startupConfig[ConfigurationInstance];
-                }
-
-                Log.Logger = new LogConfig().Build(startupConfig, instance).CreateLogger();
+                Log.Information("Containerized: commit {ContainerCommit} created on {ContainerDate} image {ContainerImageVersion}",
+                    config["org.opencontainers.image.revision"] ?? "unknown",
+                    config["org.opencontainers.image.created"] ?? "unknown",
+                    config["org.opencontainers.image.version"] ?? "unknown");
             }
 
             try
             {
-                Log.Information("Starting {Name} v{Version} for instance {Instance}",
+                webhost.Run();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Fatal(ex,
+                    "{Name} v{Version} instance {Instance} exited unexpectedly: {Message}",
                     Assembly.GetExecutingAssembly().GetName().Name,
                     Assembly.GetEntryAssembly()
                         .GetCustomAttribute<AssemblyFileVersionAttribute>()?
                         .Version,
-                    instance);
-                CreateWebHostBuilder(args).Build().Run();
-            }
-            catch (System.Exception ex)
-            {
-                Log.Logger.Fatal(ex, "A fatal error occurred on {Name} instance {Instance}: {Message}",
-                    Assembly.GetExecutingAssembly().GetName().Name,
                     instance,
                     ex.Message);
+                Environment.ExitCode = 1;
+                throw;
             }
             finally
             {
-                Log.Information("Stopping {Name} for instance {Instance}",
-                    Assembly.GetExecutingAssembly().GetName().Name,
-                    instance);
+                Log.Information("Stopping {Name} v{Version} instance {Instance}",
+                Assembly.GetExecutingAssembly().GetName().Name,
+                Assembly.GetEntryAssembly()
+                    .GetCustomAttribute<AssemblyFileVersionAttribute>()?
+                    .Version,
+                instance);
                 Log.CloseAndFlush();
             }
         }
-
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-            .UseSerilog()
-            .UseStartup<Startup>();
     }
 }

@@ -1,9 +1,11 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
+using System.Globalization;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
-using Serilog.Sinks.MSSqlServer;
 
 namespace ShortURL
 {
@@ -16,49 +18,29 @@ namespace ShortURL
         public const string IdentifierEnrichment = "Identifier";
         public const string RemoteAddressEnrichment = "RemoteAddress";
 
-        public LoggerConfiguration Build(IConfiguration config, string instance)
+        public LoggerConfiguration Build(IConfiguration config, LoggingLevelSwitch levelSwitch)
         {
-            var loggerConfig = new LoggerConfiguration()
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            LoggerConfiguration loggerConfig = new LoggerConfiguration()
+                .ReadFrom.Configuration(config)
+                .Enrich.FromLogContext()
                 .Enrich.WithProperty(ApplicationEnrichment,
                     Assembly.GetExecutingAssembly().GetName().Name)
                 .Enrich.WithProperty(VersionEnrichment,
-                    Assembly.GetEntryAssembly()
-                        .GetCustomAttribute<AssemblyFileVersionAttribute>()?
-                        .Version)
-                .Enrich.WithProperty(InstanceEnrichment, instance)
-                .Enrich.FromLogContext()
-                .ReadFrom.Configuration(config)
-                .WriteTo.Console();
+                    Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
 
-            string rollingLog = config[Program.ConfigurationLogRolling];
-            if (!string.IsNullOrEmpty(rollingLog))
+            string instance = config[Program.ConfigurationInstance];
+
+            if (!string.IsNullOrEmpty(instance))
             {
-                string rollingLogFile = rollingLog + instance + "-.log";
-
-                loggerConfig.WriteTo.File(rollingLogFile, rollingInterval: RollingInterval.Day);
+                loggerConfig.Enrich.WithProperty(InstanceEnrichment, instance);
             }
 
-            string sqlLog = config.GetConnectionString(Program.LogConnectionString);
-            if (!string.IsNullOrEmpty(sqlLog))
-            {
-                loggerConfig
-                    .WriteTo.Logger(_ => _
-                    .WriteTo.MSSqlServer(sqlLog,
-                        "Logs",
-                        autoCreateSqlTable: true,
-                        restrictedToMinimumLevel: LogEventLevel.Information,
-                        columnOptions: new ColumnOptions
-                        {
-                            AdditionalDataColumns = new DataColumn[]
-                            {
-                                new DataColumn(ApplicationEnrichment, typeof(string)) { MaxLength = 255 },
-                                new DataColumn(VersionEnrichment, typeof(string)) { MaxLength = 255 },
-                                new DataColumn(IdentifierEnrichment, typeof(string)) { MaxLength = 255 },
-                                new DataColumn(InstanceEnrichment, typeof(string)) { MaxLength = 255 },
-                                new DataColumn(RemoteAddressEnrichment, typeof(string)) { MaxLength = 255 }
-                            }
-                        }));
-            }
+            loggerConfig.WriteTo.Console(formatProvider: CultureInfo.InvariantCulture);
 
             return loggerConfig;
         }
