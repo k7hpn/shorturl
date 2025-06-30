@@ -8,37 +8,26 @@ using Microsoft.Extensions.Logging;
 
 namespace ShortURL.Data
 {
-    public class Lookup
+    public class Lookup(ILogger<Lookup> logger, IDistributedCache cache, Context context)
     {
-        private readonly IDistributedCache _cache;
-        private readonly Context _context;
-        private readonly ILogger _logger;
+        private readonly IDistributedCache _cache = cache
+            ?? throw new ArgumentNullException(nameof(cache));
 
-        public Lookup(ILogger<Lookup> logger, IDistributedCache cache, Context context)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-        }
+        private readonly Context _context = context
+            ?? throw new ArgumentNullException(nameof(context));
+
+        private readonly ILogger _logger = logger
+            ?? throw new ArgumentNullException(nameof(logger));
 
         public static string GetCacheKey(string domain = null, string stub = null)
         {
-            if (!string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(stub))
-            {
-                return $"d.{domain}.s.{stub}";
-            }
-            else if (!string.IsNullOrEmpty(domain))
-            {
-                return $"d.{domain}";
-            }
-            else if (!string.IsNullOrEmpty(stub))
-            {
-                return $"s.{stub}";
-            }
-            else
-            {
-                return "default";
-            }
+            return !string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(stub)
+                ? $"d.{domain}.s.{stub}"
+                : !string.IsNullOrEmpty(domain)
+                    ? $"d.{domain}"
+                    : !string.IsNullOrEmpty(stub)
+                        ? $"s.{stub}"
+                        : "default";
         }
 
         public async Task<Model.IdAndLink> GetGroupDefaultAsync(string domainName)
