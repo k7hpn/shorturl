@@ -17,6 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Migrations\20190517175755_dev.cs" />
     <Compile Remove="Migrations\20190517175755_dev.Designer.cs" />
   </ItemGroup>
@@ -30,5 +36,5 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.17" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.17" />
   </ItemGroup>
-
+  
 </Project>

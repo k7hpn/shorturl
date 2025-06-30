@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using ShortURL.Model;
 
 namespace ShortURL.Controllers
 {
@@ -14,41 +13,61 @@ namespace ShortURL.Controllers
     {
         private const string MuteExtension = ".php";
 
-        private static readonly string[] MuteStubs = {
+        private static readonly string[] MuteStubs = [
             "favicon.ico",
             "index.htm",
             "robots.txt",
             "sitemap.xml",
             "webdav"
-        };
+        ];
 
-        private readonly ILogger _logger;
         private readonly IDistributedCache _cache;
-        private readonly IConfiguration _config;
+        private readonly ApplicationConfiguration _config;
+        private readonly ILogger _logger;
         private readonly Data.Lookup _lookup;
-        private readonly Data.Update _update;
+        private readonly Data.LogRequest _update;
 
         public DefaultController(ILogger<DefaultController> logger,
             IDistributedCache cache,
-            IConfiguration config,
+            ApplicationConfiguration config,
             Data.Lookup lookup,
-            Data.Update update)
+            Data.LogRequest update)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-            _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
-            _update = update ?? throw new ArgumentNullException(nameof(update));
+            ArgumentNullException.ThrowIfNull(cache);
+            ArgumentNullException.ThrowIfNull(config);
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(lookup);
+            ArgumentNullException.ThrowIfNull(update);
+
+            _cache = cache;
+            _config = config;
+            _logger = logger;
+            _lookup = lookup;
+            _update = update;
+        }
+
+        [HttpDelete("{stub}")]
+        public async Task<IActionResult> Delete(string stub)
+        {
+            var domainNameText = Request?.Host.Host?.Trim();
+            var stubText = stub?.Trim();
+
+            var key = Data.Lookup.GetCacheKey(domainNameText, stubText);
+
+            if (key != "default")
+            {
+                await _cache.RemoveAsync(key);
+                _logger.LogInformation("Cache key {Key} purged upon request", key);
+            }
+
+            return Ok();
         }
 
         [Route("")]
         [HttpGet("{stub}")]
         public async Task<ActionResult<string>> Get(string stub)
         {
-            var fixedStub = string.IsNullOrEmpty(stub) ? null : stub.Trim();
-
-            return Redirect(await GetRedirectAsync(Request?.Host.Host,
-                fixedStub));
+            return Redirect(await GetRedirectAsync(Request?.Host.Host, stub?.Trim()));
         }
 
         private async Task<string> GetRedirectAsync(string domainName,
@@ -69,11 +88,8 @@ namespace ShortURL.Controllers
                 }
 
                 // no match for group + stub or stub provided with no domain
-                if (recordIdLink == null)
-                {
-                    // check for stub independent of domain/group
-                    recordIdLink = await _lookup.GetStubNoGroupAsync(stubText);
-                }
+                // check for stub independent of domain/group
+                recordIdLink ??= await _lookup.GetStubNoGroupAsync(stubText);
             }
 
             if (recordIdLink == null && !string.IsNullOrEmpty(domainNameText))
@@ -98,7 +114,7 @@ namespace ShortURL.Controllers
 
                 if (groupIdLink == null)
                 {
-                    destination = _config[Program.ConfigurationDefaultLink];
+                    destination = _config.DefaultLink;
                     _logger.LogInformation("No default URL configured in the database, defaulting to {Destination} from configuration",
                         destination);
                 }
@@ -124,23 +140,6 @@ namespace ShortURL.Controllers
             }
 
             return destination;
-        }
-
-        [HttpDelete("{stub}")]
-        public async Task<IActionResult> Delete(string stub)
-        {
-            string domainNameText = Request?.Host.Host?.Trim();
-            string stubText = stub?.Trim();
-
-            string key = Data.Lookup.GetCacheKey(domainNameText, stubText);
-
-            if (key != "default")
-            {
-                await _cache.RemoveAsync(key);
-                _logger.LogInformation("Cache key {Key} purged upon request", key);
-            }
-
-            return Ok();
         }
     }
 }

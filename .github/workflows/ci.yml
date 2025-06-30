@@ -1,0 +1,26 @@
+name: ci
+run-name: ${{ github.actor }} is running ci
+
+on: [push, pull_request]
+
+jobs:
+  build-docker-image:
+    name: "Build Docker image"
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run build.bash
+        env:
+          BLD_DOCKER_IMAGE: shorturl 
+          CR_OWNER: ${{secrets.CR_OWNER}}
+          CR_PASSWORD: ${{secrets.CR_PASSWORD}}
+          CR_USER: ${{secrets.CR_USER}}
+          GHCR_OWNER: ${{secrets.GHCR_OWNER}}
+          GHCR_PAT: ${{secrets.GHCR_PAT}}
+          GHCR_USER: ${{secrets.GHCR_USER}}
+        run: ./build.bash -p
+
