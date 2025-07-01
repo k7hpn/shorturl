@@ -19,14 +19,14 @@ namespace ShortURL.Data
         private readonly ILogger _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
-        public static string GetCacheKey(string domain = null, string stub = null)
+        public static string GetCacheKey(string domain = null, string slug = null)
         {
-            return !string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(stub)
-                ? $"d.{domain}.s.{stub}"
+            return !string.IsNullOrEmpty(domain) && !string.IsNullOrEmpty(slug)
+                ? $"d.{domain}.s.{slug}"
                 : !string.IsNullOrEmpty(domain)
                     ? $"d.{domain}"
-                    : !string.IsNullOrEmpty(stub)
-                        ? $"s.{stub}"
+                    : !string.IsNullOrEmpty(slug)
+                        ? $"s.{slug}"
                         : "default";
         }
 
@@ -66,9 +66,9 @@ namespace ShortURL.Data
             return idAndLink;
         }
 
-        public async Task<Model.IdAndLink> GetGroupStubAsync(string domainName, string stubText)
+        public async Task<Model.IdAndLink> GetGroupSlugAsync(string domainName, string slugText)
         {
-            string cacheKey = GetCacheKey(domainName, stubText);
+            string cacheKey = GetCacheKey(domainName, slugText);
 
             var cachedValue = await GetCacheAsync(cacheKey);
             if (cachedValue != null)
@@ -82,18 +82,11 @@ namespace ShortURL.Data
                 .Select(_ => _.GroupId)
                 .SingleOrDefaultAsync();
 
-            if (groupId == default)
-            {
-                _logger.LogInformation("No group with name equal to {DomainName}: {StubText}",
-                    domainName,
-                    stubText);
-            }
-
             var idAndLink = await _context.Records
                 .AsNoTracking()
                 .Where(_ => _.IsActive
                     && _.GroupId == groupId
-                    && _.Stub == stubText)
+                    && _.Stub == slugText)
                 .Select(_ => new Model.IdAndLink { Id = _.RecordId, Link = _.Link })
                 .SingleOrDefaultAsync();
 
@@ -105,9 +98,9 @@ namespace ShortURL.Data
             return idAndLink;
         }
 
-        public async Task<Model.IdAndLink> GetStubNoGroupAsync(string stubText)
+        public async Task<Model.IdAndLink> GetSlugNoGroupAsync(string slugText)
         {
-            string cacheKey = GetCacheKey(stub: stubText);
+            string cacheKey = GetCacheKey(slug: slugText);
 
             var cachedValue = await GetCacheAsync(cacheKey);
             if (cachedValue != null)
@@ -119,7 +112,7 @@ namespace ShortURL.Data
                 .AsNoTracking()
                 .Where(_ => _.IsActive
                     && _.GroupId == null
-                    && _.Stub == stubText)
+                    && _.Stub == slugText)
                 .Select(_ => new Model.IdAndLink { Id = _.RecordId, Link = _.Link })
                 .SingleOrDefaultAsync();
 
@@ -181,7 +174,8 @@ namespace ShortURL.Data
 
             if (idAndLink == null)
             {
-                _logger.LogWarning("Cache hit but removing {Key}, could not deserialize: {Serialized}",
+                _logger.LogWarning(
+                    "Cache hit but removing {Key}, could not deserialize: {Serialized}",
                     key,
                     cacheValue);
                 await _cache.RemoveAsync(key);
