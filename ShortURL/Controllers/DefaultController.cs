@@ -84,12 +84,12 @@ namespace ShortURL.Controllers
                 if (!string.IsNullOrEmpty(domainNameText))
                 {
                     // domain and stub provided, check group + stub
-                    recordIdLink = await _lookup.GetGroupStubAsync(domainNameText, stubText);
+                    recordIdLink = await _lookup.GetGroupSlugAsync(domainNameText, stubText);
                 }
 
                 // no match for group + stub or stub provided with no domain
                 // check for stub independent of domain/group
-                recordIdLink ??= await _lookup.GetStubNoGroupAsync(stubText);
+                recordIdLink ??= await _lookup.GetSlugNoGroupAsync(stubText);
             }
 
             if (recordIdLink == null && !string.IsNullOrEmpty(domainNameText))

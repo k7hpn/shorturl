@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Update Docker build script
 - Transition settings to be namespaced
 - Cache values in JSON rather than as binary data
+- Move logging fully into configuration rather than application settings
 
 ### Removed
 
@@ -48,7 +49,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - Ability to add multiple domains to a group for domain-specific routing
-- Record redirections based on supplied stub after the URL
+- Record redirections based on supplied slug after the URL
 - Counting and last accessed for group and record accesses
 - Detailed logging of each access for more specific reporting
 - Caching of domains to reduce database lookups

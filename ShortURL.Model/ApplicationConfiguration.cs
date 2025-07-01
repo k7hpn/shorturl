@@ -10,7 +10,5 @@
         public string Instance { get; set; }
         public string RequestLogging { get; set; }
         public string ReverseProxy { get; set; }
-        public string SeqApiKey { get; set; }
-        public string SeqEndpoint { get; set; }
     }
 }

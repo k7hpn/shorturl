@@ -20,7 +20,6 @@ jobs:
           CR_PASSWORD: ${{secrets.CR_PASSWORD}}
           CR_USER: ${{secrets.CR_USER}}
           GHCR_OWNER: ${{secrets.GHCR_OWNER}}
-          GHCR_PAT: ${{secrets.GHCR_PAT}}
-          GHCR_USER: ${{secrets.GHCR_USER}}
+          GHCR_PAT: ${{secrets.GITHUB_TOKEN}}
+          GHCR_USER: ${{github.actor}}
         run: ./build.bash -p
-
