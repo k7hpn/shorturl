@@ -141,9 +141,7 @@ builder.Services.AddScoped<ShortURL.Data.LogRequest>();
 
 var app = builder.Build();
 
-Log.Logger = LogConfiguration.Build(builder.Configuration,
-    applicationConfiguration,
-    applicationInfo).CreateLogger();
+Log.Logger = LogConfiguration.Build(builder.Configuration, applicationInfo).CreateLogger();
 
 try
 {
