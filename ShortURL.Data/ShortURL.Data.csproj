@@ -12,9 +12,15 @@
     <Product>ShortURL</Product>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/mcld/shorturl/</RepositoryUrl>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.0-beta</Version>
+    <TargetFramework>net8.0</TargetFramework>
+    <Version>1.1.0</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Migrations\20190517175755_dev.cs" />
@@ -26,9 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.2.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.17" />
   </ItemGroup>
-
+  
 </Project>

@@ -5,17 +5,17 @@ namespace ShortURL.Model
 {
     public class Domain
     {
-        [Key]
         [Required]
-        [MaxLength(255)]
-        public string Name { get; set; }
-
-        [Required]
-        public int GroupId { get; set; }
+        public DateTime CreatedOn { get; set; }
 
         public Group Group { get; set; }
 
         [Required]
-        public DateTime CreatedOn { get; set; }
+        public int GroupId { get; set; }
+
+        [Key]
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; }
     }
 }

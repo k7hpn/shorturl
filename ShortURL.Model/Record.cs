@@ -6,20 +6,7 @@ namespace ShortURL.Model
 {
     public class Record
     {
-        [Required]
-        public int RecordId { get; set; }
-
-        [MaxLength(255)]
-        [Required]
-        public string Stub { get; set; }
-
-        [Required]
-        public bool IsActive { get; set; }
-
-        [Required]
-        public int Visits { get; set; }
-
-        public DateTime? LatestVisit { get; set; }
+        public ICollection<RecordVisit> Accesses { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -34,8 +21,21 @@ namespace ShortURL.Model
 
         public int? GroupId { get; set; }
 
-        public ICollection<RecordVisit> Accesses { get; set; }
+        [Required]
+        public bool IsActive { get; set; }
+
+        public DateTime? LatestVisit { get; set; }
 
         public string Link { get; set; }
+
+        [Required]
+        public int RecordId { get; set; }
+
+        [MaxLength(255)]
+        [Required]
+        public string Stub { get; set; }
+
+        [Required]
+        public int Visits { get; set; }
     }
 }
